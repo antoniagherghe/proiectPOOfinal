@@ -1,14 +1,39 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <list>       // A doua structură de date din STL (Cerinta Tema 2)
+#include <exception>
 #include <unistd.h>
 
 using namespace std;
 
+// ==========================================
+// CERINȚA TEMA 2: ENUM
+// ==========================================
+enum class Season { SPRING, SUMMER, AUTUMN, WINTER }; 
+
+// Forward declarations
 class Farmer;
 class Player;
 
-//CLASA ABSTRACTA PLANT
+// ==========================================
+// CERINȚA TEMA 2: EXCEPȚII PROPRII
+// ==========================================
+class InsufficientFundsException : public exception { 
+public:
+    const char* what() const noexcept override {
+        return "Eroare: Nu ai suficienti bani in balanta pentru a plati fermierul sau actiunea!";
+    }
+};
+
+class InvalidPlotException : public exception { 
+public:
+    const char* what() const noexcept override {
+        return "Eroare: Plotul selectat este invalid sau nu a fost cumparat inca!";
+    }
+};
+
+// CLASA ABSTRACTĂ PLANT
 class Plant {
 protected:
     string name;
@@ -18,33 +43,37 @@ protected:
     int sellPrice;
 public:
     Plant(const string&, float, int, int);
-    //CONSTRUCTOR DE COPIERE
     Plant(const Plant &p);
-    virtual ~Plant();  // destructor VIRTUAL (obligatoriu la mostenire)
-    friend istream& operator>>(istream &is, Plant &obj);
-    friend ostream& operator<<(ostream &os, const Plant &obj);
-    Plant& operator=(const Plant &obj) {
-        if(this!=&obj) {
-            this->name=obj.name;
-            this->growthDuration=obj.growthDuration;
-            this->age=0;
-            this->buyPrice=obj.buyPrice;
-            this->sellPrice=obj.sellPrice;
+    virtual ~Plant();  
+    
+    friend istream& operator>>(istream &is, Plant &obj); 
+    friend ostream& operator<<(ostream &os, const Plant &obj); 
+    
+    Plant& operator=(const Plant &obj) { 
+        if(this != &obj) {
+            this->name = obj.name;
+            this->growthDuration = obj.growthDuration;
+            this->age = 0;
+            this->buyPrice = obj.buyPrice;
+            this->sellPrice = obj.sellPrice;
         }
         return *this;
     }
-    friend bool operator==(const Plant& pl1, const Plant& pl2);
-    friend Farmer;
-    friend Player;
-    void grow() {age++;};
-    void water() {age+=1;};
+    
+    friend bool operator==(const Plant& pl1, const Plant& pl2); 
+    friend class Farmer;
+    friend class Player;
+    
+    void grow() { age++; };
+    void water() { age += 1; };
     bool isMature();
     bool isWilted();
-    int getBuyPrice() {return buyPrice;};
-    int getSellPrice() {return sellPrice;};
-    string getName() const {return name;};
-    virtual string getType() const = 0;
-    virtual Plant* clone() const = 0;  // clone pattern pentru copiere polimorfa
+    int getBuyPrice() { return buyPrice; };
+    int getSellPrice() { return sellPrice; };
+    string getName() const { return name; };
+    
+    virtual string getType() const = 0; 
+    virtual Plant* clone() const = 0;  
 };
 
 bool operator==(const Plant& pl1, const Plant& pl2) {
@@ -52,18 +81,14 @@ bool operator==(const Plant& pl1, const Plant& pl2) {
 }
 
 bool Plant::isMature() {
-    if(age>=int(growthDuration) && age<=int(growthDuration*1.5))
-        return true;
-    return false;
+    return (age >= int(growthDuration) && age <= int(growthDuration * 1.5));
 }
 
 bool Plant::isWilted() {
-    if(age>=int(growthDuration*1.5))
-        return true;
-    return false;
+    return (age >= int(growthDuration * 1.5));
 }
 
-Plant::Plant(const string& name, float growthDuration, int buyPrice, int sellPrice) {
+Plant::Plant(const string& name, float growthDuration, int buyPrice, int sellPrice) { 
     this->name = name;
     this->growthDuration = growthDuration;
     this->age = 0;
@@ -71,8 +96,7 @@ Plant::Plant(const string& name, float growthDuration, int buyPrice, int sellPri
     this->sellPrice = sellPrice;
 }
 
-//constructorul de copiere
-Plant::Plant(const Plant &obj) {
+Plant::Plant(const Plant &obj) { 
     this->name = obj.name;
     this->growthDuration = obj.growthDuration;
     this->age = 0;
@@ -80,72 +104,92 @@ Plant::Plant(const Plant &obj) {
     this->sellPrice = obj.sellPrice;
 }
 
-istream& operator>>(istream &is, Plant &obj) {
-    cout<<"Enter plant name: ";
+istream& operator>>(istream &is, Plant &obj) { 
+    cout << "Enter plant name: ";
     is >> ws;
     getline(is, obj.name);
-    cout<<"Enter growth duration: ";
-    is>>obj.growthDuration;
-    cout<<"Enter buy price: ";
-    is>>obj.buyPrice;
-    cout<<"Enter sell price: ";
-    is>>obj.sellPrice;
-    obj.age=0;
+    cout << "Enter growth duration: ";
+    is >> obj.growthDuration;
+    cout << "Enter buy price: ";
+    is >> obj.buyPrice;
+    cout << "Enter sell price: ";
+    is >> obj.sellPrice;
+    obj.age = 0;
     return is;
 }
 
-ostream& operator<<(ostream &os, const Plant &obj) {
-    os<<"Type= "<<obj.getType()<<'\n';  // polimorfism: apeleaza getType-ul derivat
-    os<<"Name= "<<obj.name<<'\n';
-    os<<"Growth Duration= "<<obj.growthDuration<<'\n';
-    os<<"Age= "<<obj.age<<'\n';
-    os<<"Buy Price= "<<obj.buyPrice<<'\n';
-    os<<"Sell Price= "<<obj.sellPrice<<'\n';
+ostream& operator<<(ostream &os, const Plant &obj) { 
+    os << "Type= " << obj.getType() << '\n';  
+    os << "Name= " << obj.name << '\n';
+    os << "Growth Duration= " << obj.growthDuration << '\n';
+    os << "Age= " << obj.age << '\n';
+    os << "Buy Price= " << obj.buyPrice << '\n';
+    os << "Sell Price= " << obj.sellPrice << '\n';
     return os;
 }
 
-Plant::~Plant() {
-}
+Plant::~Plant() {} 
 
 
-//SUB-CLASA VEGETABLE
-class Vegetable : public Plant {
+// SUB-CLASA VEGETABLE
+class Vegetable : public Plant { 
 private:
     bool isRoot;
 public:
     Vegetable(const string& name, float growthDuration, int buyPrice, int sellPrice, bool isRoot)
-        : Plant(name, growthDuration, buyPrice, sellPrice), isRoot(isRoot) {}
+        : Plant(name, growthDuration, buyPrice, sellPrice), isRoot(isRoot) {} 
 
     string getType() const override { return "Vegetable"; }
     Plant* clone() const override { return new Vegetable(*this); }
     bool getIsRoot() const { return isRoot; }
 };
 
-// a = mar.clone() | a = new Vegetable(mar)
-// a = new int(5)
 
-//SUB-CLASA FRUIT
-class Fruit : public Plant {
+// SUB-CLASA FRUIT
+class Fruit : public Plant { 
 private:
-    string season;
+    Season preferentialSeason; 
 public:
-    Fruit(const string& name, float growthDuration, int buyPrice, int sellPrice, const string& season)
-        : Plant(name, growthDuration, buyPrice, sellPrice), season(season) {}
+    Fruit(const string& name, float growthDuration, int buyPrice, int sellPrice, Season season)
+        : Plant(name, growthDuration, buyPrice, sellPrice), preferentialSeason(season) {} 
 
     string getType() const override { return "Fruit"; }
     Plant* clone() const override { return new Fruit(*this); }
-    string getSeason() const { return season; }
+    string getSeasonStr() const {
+        if(preferentialSeason == Season::SUMMER) return "Summer";
+        return "Other Season";
+    }
 };
 
 
-//CLASA PLAYER
+// ==========================================
+// CERINȚA TEMA 1: RELAȚIE DE COMPUNERE (Clasa Plot)
+// ==========================================
+class Plot { 
+private:
+    Plant* plantedCrop; 
+public:
+    Plot() : plantedCrop(nullptr) {}
+    ~Plot() { delete plantedCrop; }
+    
+    void setCrop(Plant* p) {
+        delete plantedCrop;
+        plantedCrop = p;
+    }
+    Plant* getCrop() { return plantedCrop; }
+    void clear() { plantedCrop = nullptr; }
+};
+
+
+// CLASA PLAYER
 class Player {
 private:
     float balance;
     string name;
     string date;
     int noPlots;
-    vector<Plant*> farm;  // VECTOR DE POINTERI — nullptr = plot gol
+    
+    vector<Plot> farm;  // COMPUNERE
 public:
     Player(const string&);
     ~Player();
@@ -153,87 +197,238 @@ public:
 
     void buyPlot();
     void sellPlot(int index);
-    int getNoPlots() {return noPlots;};
+    int getNoPlots() { return noPlots; };
+    float getBalance() const { return balance; }
     void display();
+    
     void agePlants() {
-        for(auto p : farm)
-            if(p != nullptr)
-                p->grow();
+        for(size_t i = 0; i < farm.size(); i++)
+            if(farm[i].getCrop() != nullptr)
+                farm[i].getCrop()->grow();
     }
 
-    Player& operator+=(float amount) {
-        this->balance+=amount;
+    Player& operator+=(float amount) { 
+        this->balance += amount;
+        return *this;
+    }
+    Player& operator-=(float amount) { 
+        this->balance -= amount;
         return *this;
     }
 };
 
 Player::Player(const string& name) {
-    this->balance = 50;
+    this->balance = 500; // Am mărit balanța inițială pentru a putea plăti fermierii la început
     this->name = name;
     this->date = "01/01/2026";
     this->noPlots = 1;
-    farm.push_back(nullptr);  // plot gol
+    farm.push_back(Plot());  
 }
 
-Player::~Player() {
-    // sterg toate plantele detinute (delete pe nullptr e ok, nu face nimic)
-    for(auto p : farm) delete p;
-}
+Player::~Player() {}
 
 void Player::buyPlot() {
-    balance-=15;
-    noPlots+=1;
-    farm.push_back(nullptr);  // nou plot, gol
-};
+    if (balance < 15) {
+        throw InsufficientFundsException(); 
+    }
+    balance -= 15;
+    noPlots += 1;
+    farm.push_back(Plot());  
+}
 
 void Player::sellPlot(int index) {
-    if(index>=0 && index<noPlots) {
-        balance+=10;
-        noPlots-=1;
-        delete farm[index];  // sterg planta din plot inainte sa-l elimin
-        farm.erase(farm.begin()+index);
+    if(index < 0 || index >= noPlots) {
+        throw InvalidPlotException(); 
+    }
+    balance += 10;
+    noPlots -= 1;
+    farm.erase(farm.begin() + index);
+}
+
+
+// CLASA FARMER
+class Farmer {
+private:
+    const int id;
+    static int noFarmers; 
+protected:
+    string name;
+    bool isBusy;
+    float salary;
+    Player* employer; // AGREGARE
+
+public:
+    Farmer(const string&, float);
+    virtual ~Farmer();          
+    friend class Plant;
+    friend class Player;
+    
+    string getName() const { return name; }
+    float getSalary() const { return salary; }
+    
+    void plant(Player &pl, Plant &p, int index);
+    void harvest(int index);
+    virtual void water(int index);   
+    void setEmployer(Player* p);
+    
+    static void printFarmerCountInfo() {
+        cout << ">>> Sistemul de Evidenta: In acest moment sunt inregistrati " 
+             << noFarmers << " fermieri in baza de date.\n";
     }
 };
 
+int Farmer::noFarmers = 0; 
+
+Farmer::Farmer(const string& name, float salary) : id(++noFarmers), employer(nullptr) { 
+    this->name = name;
+    this->isBusy = false;
+    this->salary = salary;
+}
+
+Farmer::~Farmer() {}
+
+void Farmer::plant(Player &pl, Plant &p, int index) {
+    if (pl.getBalance() < salary) throw InsufficientFundsException();
+    if(index < 0 || index >= (int)pl.farm.size()) throw InvalidPlotException();
+    
+    if(pl.farm[index].getCrop() != nullptr) {  
+        cout << "Plot is not empty, choose another one.\n";
+        return;
+    }
+    pl -= salary; // Se plătește munca fermierului
+    pl.farm[index].setCrop(p.clone());  
+    cout << name << " a plantat cu succes " << p.getName() << " pe plotul " << (index + 1) << ".\n";
+}
+
+void Farmer::water(int index) {
+    if (employer == nullptr) return;
+    if (employer->getBalance() < salary) throw InsufficientFundsException();
+    if (index < 0 || index >= (int)employer->farm.size()) throw InvalidPlotException();
+
+    employer->operator-=(salary); // Se plătește munca fermierului
+    if (employer->farm[index].getCrop() != nullptr) {
+        employer->farm[index].getCrop()->water();
+        cout << name << " a udat plotul " << (index + 1) << ".\n";
+    } else {
+        cout << name << " a udat un plot gol (apa s-a irosit).\n";
+    }
+}
+
+void Farmer::harvest(int index) {
+    if (employer == nullptr) return;
+    if (employer->getBalance() < salary) throw InsufficientFundsException();
+    if (index < 0 || index >= (int)employer->farm.size()) throw InvalidPlotException();
+    
+    if (employer->farm[index].getCrop() == nullptr) {
+        cout << "Nothing to harvest here.\n";
+        return;
+    }
+
+    employer->operator-=(salary); // Se plătește munca fermierului
+    Plant* p = employer->farm[index].getCrop();
+
+    if (p->isWilted()) {
+        cout << "Oh no! The plant '" << p->getName() << "' was wilted.\n";
+        employer->farm[index].setCrop(nullptr); 
+    } 
+    else if (p->isMature()) {
+        int profit = p->getSellPrice();
+        *employer += profit; 
+        cout << "Success! " << name << " harvested '" << p->getName() << "' for $" << profit << ".\n";
+        employer->farm[index].setCrop(nullptr); 
+    } 
+    else {
+        cout << "The plant '" << p->getName() << "' is not mature yet! (Age: " << p->age << ")\n";
+    }
+}
+
+void Farmer::setEmployer(Player* p) { this->employer = p; }
+
+
+// SUB-CLASA JUNIOR FARMER
+class JuniorFarmer : public Farmer { 
+public:
+    JuniorFarmer(const string& name) : Farmer(name, 10) {} // Cost per actiune mic
+    void water(int index) override { Farmer::water(index); }
+};
+
+
+// SUB-CLASA SENIOR FARMER
+class SeniorFarmer : public Farmer { 
+private:
+    int experience;
+public:
+    SeniorFarmer(const string& name, int experience) : Farmer(name, 25), experience(experience) {} // Cost mai mare
+
+    void water(int index) override {
+        // Polimorfism: Udă plotul curent și automat următorul plot!
+        Farmer::water(index);      
+        if (employer != nullptr && (index + 1) < (int)employer->farm.size()) {
+            if (employer->farm[index + 1].getCrop() != nullptr) {
+                employer->farm[index + 1].getCrop()->water();
+                cout << "[BONUS SENIOR] " << name << " a udat automat si plotul " << (index + 2) << "!\n";
+            }
+        }
+    }
+    int getExperience() const { return experience; }
+};
+
+
+// ==========================================
+// CERINȚA TEMA 3: CLASĂ SINGLETON
+// ==========================================
+class GameStatManager { 
+private:
+    int totalHarvestsSuccessfully;
+    GameStatManager() : totalHarvestsSuccessfully(0) {} 
+    static GameStatManager* instance;
+public:
+    static GameStatManager* getInstance() { 
+        if (!instance) instance = new GameStatManager();
+        return instance;
+    }
+    void incrementHarvests() { totalHarvestsSuccessfully++; }
+    void printStats() {
+        cout << "--- STATISTICI SIFONATE GLOBAL --- \nRecolte reusite de la pornirea jocului: " 
+             << totalHarvestsSuccessfully << "\n----------------------------------\n";
+    }
+};
+GameStatManager* GameStatManager::instance = nullptr;
+
+
+// ==========================================
+// CERINȚA TEMA 3: METODĂ TEMPLATE
+// ==========================================
+template <typename T>
+bool isValueAffordable(T balance, T price) { 
+    return balance >= price;
+}
+
+
+// IMPLEMENTAREA METODEI DISPLAY PENTRU PLAYER
 void Player::display() {
-        // Lambda existent pentru desenarea interiorului plotului
-        auto box = [&](int i) -> string {
-            if(i >= (int)farm.size()) return "| # # # |";
-            if(farm[i] == nullptr) return "| - - - |";  // plot gol
-            char c = farm[i]->getName()[0];             
-            return string("| ") + c + " " + c + " " + c + " |";
-        };
+    auto box = [&](int i) -> string {
+        if(i >= (int)farm.size()) return "| # # # |";
+        if(farm[i].getCrop() == nullptr) return "| - - - |";  
+        char c = farm[i].getCrop()->getName()[0];             
+        return string("| ") + c + " " + c + " " + c + " |";
+    };
 
-        // LAMBDA MODIFICAT: Afișează [READY], [WILTED] sau Age: X, păstrând fix 9 caractere
-        auto ageLine = [&](int i) -> string {
-            if (i >= (int)farm.size() || farm[i] == nullptr) {
-                return "         "; // 9 spații pentru plot gol / neachiziționat
-            }
-            
-            string statusStr;
-            
-            // Verificăm starea plantei folosind metodele tale
-            if (farm[i]->isWilted()) {
-                statusStr = "[WILTED]";
-            } else if (farm[i]->isMature()) {
-                statusStr = "[READY]";
-            } else {
-                statusStr = "Age: " + to_string(farm[i]->age);
-            }
-            
-            // Forțăm string-ul să aibă FIX 9 caractere (umplem cu spații dacă e mai scurt)
-            while (statusStr.length() < 9) {
-                statusStr += " ";
-            }
-            
-            // Dacă cumva textul e mai lung de 9 caractere (ex: la vârste de peste 2 cifre), 
-            // îl tăiem la 9 ca să nu destabilizăm marginile ASCII
-            return statusStr.substr(0, 9);
-        };
+    auto ageLine = [&](int i) -> string {
+        if (i >= (int)farm.size() || farm[i].getCrop() == nullptr) return "         "; 
+        string statusStr;
+        Plant* p = farm[i].getCrop();
+        if (p->isWilted()) statusStr = "[WILTED]";
+        else if (p->isMature()) statusStr = "[READY]";
+        else statusStr = "Age: " + to_string(p->age);
+        
+        while (statusStr.length() < 9) statusStr += " ";
+        return statusStr.substr(0, 9);
+    };
 
-        cout << " _________________________________________________________________ \n";
-        cout << "| [ " << date << " ]                             [ BAL: $" << balance << " ]     |\n";
-        cout << R"(|_________________________________________________________________|
+    cout << " _________________________________________________________________ \n";
+    cout << "| [ " << date << " ]                             [ BAL: $" << balance << " ]     |\n";
+    cout << R"(|_________________________________________________________________|
 |                                                                 |
 |      (  )                                                       |
 |       ||           _   _                                        |
@@ -243,289 +438,168 @@ void Player::display() {
 |____|__L___|_____________________________________________________|
 |                                                                 |
 )";
-        // RÂNDUL 1 DE PLOTURI (Plot 1, 2, 3)
-        cout << "|  " << ageLine(0) << "     " << ageLine(1) << "     " << ageLine(2) << "                       |\n";
-        cout << "|  .-------.     .-------.     .-------.       [ OPTIONS ]        |\n";
-        cout << "|  " << box(0) << "     " << box(1) << "     " << box(2) << "     (A) [ WATER ]        |\n";
-        cout << "|  " << box(0) << "     " << box(1) << "     " << box(2) << "     (B) [ PLANT ]        |\n";
-        cout << "|  " << box(0) << "     " << box(1) << "     " << box(2) << "     (C) [ HARVEST ]      |\n";
-        cout << R"(|  '-------'     '-------'     '-------'     (D) [ BUY PLOT ]     |
-|    Plot 1        Plot 2        Plot 3      (E) [ SELL PLOT ]    |
-|                                            (F) [ CREATE PLANT ] |
+    cout << "|  " << ageLine(0) << "     " << ageLine(1) << "     " << ageLine(2) << "       [ OPTIONS ]        |\n";
+    cout << "|  .-------.     .-------.     .-------.     (A) [ WATER ]        |\n";
+    cout << "|  " << box(0) << "     " << box(1) << "     " << box(2) << "     (B) [ PLANT ]        |\n";
+    cout << "|  " << box(0) << "     " << box(1) << "     " << box(2) << "     (C) [ HARVEST ]      |\n";
+    cout << "|  " << box(0) << "     " << box(1) << "     " << box(2) << "     (D) [ BUY PLOT ]     |\n";
+    cout << R"(|  '-------'     '-------'     '-------'     (E) [ SELL PLOT ]    |
+|    Plot 1        Plot 2        Plot 3      (F) [ CREATE PLANT ] |
+|                                            (G) [ BONUS: STAFF ] |
 |                                                                 |
 )";
-        // RÂNDUL 2 DE PLOTURI (Plot 4, 5, 6)
-        cout << "|  " << ageLine(3) << "     " << ageLine(4) << "     " << ageLine(5) << "                          |\n";
-        cout << "|  .-------.     .-------.     .-------.                          |\n";
-        cout << "|  " << box(3) << "     " << box(4) << "     " << box(5) << "                          |\n";
-        cout << "|  " << box(3) << "     " << box(4) << "     " << box(5) << "                          |\n";
-        cout << "|  " << box(3) << "     " << box(4) << "     " << box(5) << "                          |\n";
-        cout << R"(|  '-------'     '-------'     '-------'                          |
+    cout << "|  " << ageLine(3) << "     " << ageLine(4) << "     " << ageLine(5) << "                          |\n";
+    cout << "|  .-------.     .-------.     .-------.                          |\n";
+    cout << "|  " << box(3) << "     " << box(4) << "     " << box(5) << "                          |\n";
+    cout << "|  " << box(3) << "     " << box(4) << "     " << box(5) << "                          |\n";
+    cout << "|  " << box(3) << "     " << box(4) << "     " << box(5) << "                          |\n";
+    cout << R"(|  '-------'     '-------'     '-------'                          |
 |    Plot 4        Plot 5        Plot 6                           |
-|                                                                 |
-)";
-        // RÂNDUL 3 DE PLOTURI (Plot 7, 8, 9)
-        cout << "|  " << ageLine(6) << "     " << ageLine(7) << "     " << ageLine(8) << "                          |\n";
-        cout << "|  .-------.     .-------.     .-------.                          |\n";
-        cout << "|  " << box(6) << "     " << box(7) << "     " << box(8) << "                          |\n";
-        cout << "|  " << box(6) << "     " << box(7) << "     " << box(8) << "                          |\n";
-        cout << "|  " << box(6) << "     " << box(7) << "     " << box(8) << "                          |\n";
-        cout << R"(|  '-------'     '-------'     '-------'                          |
-|    Plot 7        Plot 8        Plot 9                           |
 |_________________________________________________________________|
-| COMMAND: > _                                                    |
-|_________________________________________________________________|
-)";
+| COMMAND: > )";
 }
 
-class Farmer {
-private:
-    const int id;
-    static int noFarmers;
-    string name;
-    bool isBusy;
-    float salary;
-    Player* employer;
-
-public:
-    Farmer(const string&, float);
-    virtual ~Farmer();          // destructor virtual
-    friend Plant;
-    friend Player;
-    void plant(Player &pl, Plant &p, int index);
-    void harvest(int index);
-    void pay(float amount);
-    virtual void water(int index);   // VIRTUAL — suprascrisa de SeniorFarmer
-    void setEmployer(Player* p);
-};
-
-int Farmer::noFarmers=0;
-
-Farmer::Farmer(const string& name, float salary) : id(++noFarmers), employer(nullptr) {
-    this->name = name;
-    this->isBusy = false;
-    this->salary = salary;
-}
-
-Farmer::~Farmer() {
-}
-
-void Farmer::plant(Player &pl, Plant &p, int index) {
-    if(isBusy==true) {
-        cout<<"Farmer is busy, return later.\n";
-        return;
+// Interfață ajutătoare pentru alegerea fermierului
+Farmer* chooseFarmer(const list<Farmer*>& staff) {
+    cout << "\nAlege fermierul pentru actiune:\n";
+    int i = 1;
+    vector<Farmer*> tempVec;
+    for (Farmer* f : staff) {
+        cout << i << ". " << f->getName() << " (Cost/actiune: $" << f->getSalary() << ")\n";
+        tempVec.push_back(f);
+        i++;
     }
-    if(index < 0 || index >= (int)pl.farm.size()) {
-        cout<<"Plot doesn't exist.\n";
-        return;
+    cout << "Optiune: ";
+    int opt; cin >> opt;
+    if (opt >= 1 && opt <= (int)tempVec.size()) {
+        return tempVec[opt - 1];
     }
-    if(pl.farm[index] != nullptr) {  // plot ocupat
-        cout<<"Plot is not empty, choose another one.\n";
-        return;
-    }
-    pl.farm[index] = p.clone();  // CLONE PATTERN — copie polimorfa
-}
-
-void Farmer::water(int index) {
-    if(employer != nullptr
-       && index >= 0
-       && index < (int)employer->farm.size()
-       && employer->farm[index] != nullptr)
-        employer->farm[index]->water();
-}
-void Farmer::harvest(int index) {
-    if (employer == nullptr) {
-        cout << "Farmer has no employer to give the money to!\n";
-        return;
-    }
-    if (index < 0 || index >= (int)employer->farm.size()) {
-        cout << "Plot doesn't exist.\n";
-        return;
-    }
-    if (employer->farm[index] == nullptr) {
-        cout << "Nothing to harvest here.\n";
-        return;
-    }
-
-    Plant* p = employer->farm[index];
-
-    // Verificăm dacă planta este matură sau ofilită
-    if (p->isWilted()) {
-        cout << "Oh no! The plant '" << p->getName() << "' was wilted and couldn't be harvested.\n";
-        delete p;
-        employer->farm[index] = nullptr; // Eliberăm plotul
-    } 
-    else if (p->isMature()) {
-        int profit = p->getSellPrice();
-        *employer += profit; // Adăugăm banii în balanța jucătorului folosind operatorul +=
-        cout << "Success! Harvested '" << p->getName() << "' for $" << profit << ".\n";
-        
-        delete p; // Ștergem planta din memorie
-        employer->farm[index] = nullptr; // Resetăm plotul la gol
-    } 
-    else {
-        cout << "The plant '" << p->getName() << "' is not mature yet! (Age: " << p->age << ")\n";
-    }
-}
-
-void Farmer::setEmployer(Player* p) {
-    this->employer=p;
+    return tempVec[0]; // Implicit returnează primul dacă greșește optiunea
 }
 
 
-//SUB-CLASA JUNIOR FARMER
-class JuniorFarmer : public Farmer {
-public:
-    JuniorFarmer(const string& name) : Farmer(name, 50) {}  // salariu fix mic
-    void water(int index) override {
-        Farmer::water(index);
-    }
-};
-
-
-//SUB-CLASA SENIOR FARMER
-class SeniorFarmer : public Farmer {
-private:
-    int experience;
-public:
-    SeniorFarmer(const string& name, int experience)
-        : Farmer(name, 150), experience(experience) {}  // salariu mai mare
-
-    void water(int index) override {
-        Farmer::water(index);      // uda plotul curent
-        Farmer::water(index + 1);  // BONUS: si urmatorul plot!
-    }
-
-    int getExperience() const { return experience; }
-};
-
-
+// MAIN FUNCTION
 int main() {
-    // VECTOR DE POINTERI la Plant — putem amesteca Vegetables si Fruits
     vector<Plant*> availablePlants;
+    list<Farmer*> staffList; 
+
     availablePlants.push_back(new Vegetable("wheat", 3, 5, 10, false));
-    availablePlants.push_back(new Vegetable("corn", 5, 10, 20, false));
-    availablePlants.push_back(new Vegetable("potato", 4, 8, 15, true));   // radacinoasa
-    availablePlants.push_back(new Vegetable("soy", 6, 12, 25, false));
-    availablePlants.push_back(new Fruit("raspberry", 2, 4, 8, "summer"));
-    availablePlants.push_back(new Fruit("tomato", 4, 7, 14, "summer"));
+    availablePlants.push_back(new Vegetable("potato", 4, 8, 15, true));
+    availablePlants.push_back(new Fruit("raspberry", 2, 4, 8, Season::SUMMER)); 
 
     Player player("Anto");
-    Player player2("Luca");
-    JuniorFarmer farmer("Boby");        // Junior — salariu $50
-    farmer.setEmployer(&player);
-    SeniorFarmer farmer2("Rob", 10);    // Senior cu 10 ani experienta
-    Farmer farmer3("Alice", 110);       // farmer generic
+    
+    JuniorFarmer* jFarmer = new JuniorFarmer("Boby");
+    jFarmer->setEmployer(&player);
+    staffList.push_back(jFarmer);
+
+    SeniorFarmer* sFarmer = new SeniorFarmer("Rob", 10);
+    sFarmer->setEmployer(&player);
+    staffList.push_back(sFarmer);
+
+    Farmer::printFarmerCountInfo(); 
+    sleep(1);
 
     char cmd;
     int index;
     do {
         system("clear");
         player.display();
-        cin>>cmd;
-        switch(cmd) {
-            case 'A': case 'a': {
-                cout<<"Enter plot index: ";
-                cin>>index;
-                if(index>=1 && index<=player.getNoPlots())
-                    farmer.water(index-1);
-                else
-                    cout<<"Plot doesn't exist.\n";
-                break;
-            }
-            case 'B': case 'b': {
-                string plantName;
-                cout<<"Enter plot index: ";
-                cin>>index;
-                cout<<"Enter plant name: ";
-                cin>>plantName;
-                Plant* chosen = nullptr;
-                for(int i = 0; i < (int)availablePlants.size(); i++) {
-                    if(availablePlants[i]->getName() == plantName) {
-                        chosen = availablePlants[i];  // deja pointer
-                        break;
+        cin >> cmd;
+        
+        try {
+            switch(cmd) {
+                case 'A': case 'a': {
+                    Farmer* worker = chooseFarmer(staffList);
+                    cout << "Enter plot index to water: "; cin >> index;
+                    if(index >= 1 && index <= player.getNoPlots()) {
+                        worker->water(index - 1); // Apel POLIMORFIC direct pe worker-ul ales
+                    } else throw InvalidPlotException(); 
+                    cout << "\nApasa Enter..."; cin.ignore(); cin.get();
+                    break;
+                }
+                case 'B': case 'b': {
+                    Farmer* worker = chooseFarmer(staffList);
+                    string plantName;
+                    cout << "Enter plot index: "; cin >> index;
+                    cout << "Enter plant name (" ;
+                    for(auto p : availablePlants) cout << p->getName() << " ";
+                    cout << "): "; cin >> plantName;
+                    
+                    Plant* chosen = nullptr;
+                    for(auto p : availablePlants) {
+                        if(p->getName() == plantName) { chosen = p; break; }
                     }
+                    
+                    if(chosen != nullptr) {
+                        if(!isValueAffordable(player.getBalance(), worker->getSalary() + chosen->getBuyPrice())) {
+                            throw InsufficientFundsException(); 
+                        }
+                        worker->plant(player, *chosen, index - 1);
+                    } else cout << "Unknown plant.\n";
+                    cout << "\nApasa Enter..."; cin.ignore(); cin.get();
+                    break;
                 }
-                if(chosen != nullptr)
-                    farmer.plant(player, *chosen, index-1);
-                else
-                    cout<<"Unknown plant.\n";
-                break;
-            }
-            case 'C': case 'c': {
-                cout << "Enter plot index to harvest: ";
-                cin >> index;
-                if (index >= 1 && index <= player.getNoPlots()) {
-                    farmer.harvest(index - 1);
-                } else {
-                    cout << "Plot doesn't exist.\n";
+                case 'C': case 'c': {
+                    Farmer* worker = chooseFarmer(staffList);
+                    cout << "Enter plot index to harvest: "; cin >> index;
+                    worker->harvest(index - 1);
+                    GameStatManager::getInstance()->incrementHarvests(); 
+                    cout << "\nPress Enter..."; cin.ignore(); cin.get();
+                    break;
                 }
-                cout << "\nPress Enter to continue...";
-                cin.ignore();
-                cin.get();
-                break;
-            }
-            case 'D': case 'd':
-                player.buyPlot();
-                break;
-            case 'E': case 'e':
-                // sell plot
-                break;
-            case 'F': case 'f': {
-                int n;
-                cout<<"Cate plante vrei sa creezi? ";
-                cin>>n;
-                for(int i = 0; i < n; i++) {
-                    char type;
-                    cout<<"Tip planta (v=vegetable, f=fruit): ";
-                    cin>>type;
-
-                    Plant* p = nullptr;
-                    if(type == 'v' || type == 'V') {
-                        int r;
-                        cout<<"Este radacinoasa? (1=da, 0=nu): ";
-                        cin>>r;
-                        p = new Vegetable("temp", 1, 0, 0, r);
-                    } else if(type == 'f' || type == 'F') {
-                        string season;
-                        cout<<"Sezon: ";
-                        cin>>season;
-                        p = new Fruit("temp", 1, 0, 0, season);
-                    } else {
-                        cout<<"Tip necunoscut, planta ignorata.\n";
-                        continue;
+                case 'D': case 'd': {
+                    player.buyPlot(); 
+                    break;
+                }
+                case 'E': case 'e': {
+                    cout << "Enter plot index to sell: "; cin >> index;
+                    player.sellPlot(index - 1); 
+                    break;
+                }
+                case 'G': case 'g': {
+                    cout << "\n=== UPCAST & DOWNCAST EXEMPLU ===\n"; 
+                    for (Farmer* f : staffList) {
+                        cout << "Fermierul: " << f->getName() << " este gestionat prin Upcast generic.\n";
+                        
+                        SeniorFarmer* s = dynamic_cast<SeniorFarmer*>(f);
+                        if (s != nullptr) { 
+                            cout << "-> [Downcast Reusit!] " << s->getName() << " este Senior si are experienta: " 
+                                 << s->getExperience() << " ani.\n"; 
+                        }
                     }
-                    cin >> *p;  // foloseste operator>> pentru numele si preturile
-                    availablePlants.push_back(p);
+                    GameStatManager::getInstance()->printStats(); 
+                    cout << "\nApasa Enter..."; cin.ignore(); cin.get();
+                    break;
                 }
-                cout<<"\n=== Plante disponibile ===\n";
-                for(int i = 0; i < (int)availablePlants.size(); i++)
-                    cout << *availablePlants[i];  // foloseste operator<< (cu polimorfism la getType)
-                cout<<"\nApasa Enter ca sa continui...";
-                cin.ignore();
-                cin.get();
-                break;
+                case 'F': case 'f': {
+                    int n; cout << "Cate plante creezi? "; cin >> n;
+                    for(int i = 0; i < n; i++) {
+                        char type; cout << "Tip (v/f): "; cin >> type;
+                        Plant* p = nullptr;
+                        if(type == 'v') p = new Vegetable("temp", 1, 0, 0, false);
+                        else p = new Fruit("temp", 1, 0, 0, Season::SPRING); 
+                        cin >> *p; availablePlants.push_back(p);
+                    }
+                    break;
+                }
             }
-            case 'Q': case 'q':
-                cout << "Goodbye!\n";
-                break;
-            default:
-                cout << "Unknown command.\n";
-                break;
+        } 
+        catch (const InsufficientFundsException& e) { 
+            cout << "\n" << e.what() << "\nApasa Enter ca sa continui...";
+            cin.ignore(); cin.get();
+        } 
+        catch (const InvalidPlotException& e) { 
+            cout << "\n" << e.what() << "\nApasa Enter ca sa continui...";
+            cin.ignore(); cin.get();
         }
-        player.agePlants();  // toate plantele cresc cu o unitate de varsta dupa fiecare comanda
+
+        player.agePlants();  
     } while(cmd != 'Q' && cmd != 'q');
 
-    // CURATARE memorie — sterg toate plantele alocate
+    // Curățare memorie
     for(auto p : availablePlants) delete p;
+    for(auto f : staffList) delete f;
 
     return 0;
 }
-
-//weak association (employer) DONE
-//alt operator supraincarcat ca functie membra (+=) DONE
-//alt operator supraincarcat ca functie non-membra (== la plante) DONE
-//optiune ptr citire si afisarea a n obiecte (comanda F) DONE
-//sa dau optiunea unui player sa-si construiasca propriile plante (comanda F) DONE
-//Plant abstracta cu metode pur virtuale (getType, clone) DONE
-//mostenire: Vegetable + Fruit din Plant, JuniorFarmer + SeniorFarmer din Farmer DONE
