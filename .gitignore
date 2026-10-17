@@ -1,0 +1,5 @@
+farm
+main
+*.dSYM/
+*.o
+.DS_Store
